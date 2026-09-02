@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PlexampRPC"
         SizeToContent="Height"
-        Width="210"
+        Width="250"
         WindowStartupLocation="CenterScreen"
         Icon="/Resources/Icon.ico"
         CanResize="False">
@@ -13,15 +13,15 @@
                 <TextBlock Text="Options" FontSize="14" Height="20" FontWeight="Bold" />
                 <DockPanel ToolTip.Tip="Seconds between each refresh">
                     <TextBlock Text="Refresh Interval:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,1,0,0" />
-                    <TextBox DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding RefreshInterval}" />
+                    <TextBox VerticalContentAlignment="Center" DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding RefreshInterval}" />
                 </DockPanel>
                 <DockPanel ToolTip.Tip="Clears presence if session has not been updated in this many seconds">
                     <TextBlock Text="Session Timeout:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,1,0,0" />
-                    <TextBox DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding SessionTimeout}" />
+                    <TextBox VerticalContentAlignment="Center" DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding SessionTimeout}" />
                 </DockPanel>
                 <DockPanel ToolTip.Tip="Album Art Resolution in Pixels">
                     <TextBlock Text="Art Resolution:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,1,0,0" />
-                    <TextBox DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding ArtResolution}" />
+                    <TextBox VerticalContentAlignment="Center" DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding ArtResolution}" />
                 </DockPanel>
                 <CheckBox x:Name="CheckUpdatesCheckBox" Margin="0,2,0,0" Content="Check for Updates" IsChecked="{Binding UpdateChecker}" ToolTip.Tip="Checks GitHub for Updates" />
                 <CheckBox x:Name="StartupCheckBox" Content="Start on Startup" IsChecked="False" ToolTip.Tip="Start PlexampRPC when Windows starts" />
@@ -51,9 +51,9 @@
             <Grid Height="10" />
             <StackPanel>
                 <TextBlock Text="Template" FontSize="14" Height="20" FontWeight="Bold" />
-                <TextBox x:Name="TemplateL1" Margin="0,2,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL1}" ToolTip.Tip="{}{title}, {artist}, {album}" LostFocus="Template_LostFocus" />
-                <TextBox x:Name="TemplateL2" Margin="0,1,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL2}" ToolTip.Tip="{}{title}, {artist}, {album}" LostFocus="Template_LostFocus" />
-                <TextBox x:Name="TemplateL3" Margin="0,1,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL3}" ToolTip.Tip="{}{title}, {artist}, {album}" />
+                <TextBox x:Name="TemplateL1" VerticalContentAlignment="Center" Margin="0,2,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL1}" ToolTip.Tip="{}{title}, {artist}, {album}" LostFocus="Template_LostFocus" />
+                <TextBox x:Name="TemplateL2" VerticalContentAlignment="Center" Margin="0,1,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL2}" ToolTip.Tip="{}{title}, {artist}, {album}" LostFocus="Template_LostFocus" />
+                <TextBox x:Name="TemplateL3" VerticalContentAlignment="Center" Margin="0,1,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL3}" ToolTip.Tip="{}{title}, {artist}, {album}" />
             </StackPanel>
         </StackPanel>
     </Grid>

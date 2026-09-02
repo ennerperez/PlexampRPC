@@ -10,7 +10,6 @@
     <Grid Background="{StaticResource AppBackgroundBrush}">
         <Grid RowDefinitions="20,96,10,Auto">
             <Grid Grid.Row="1" Margin="5" HorizontalAlignment="Center" ColumnDefinitions="96,Auto">
-                <ProgressBar x:Name="LoadingImage" Width="72" Height="8" Minimum="0" Maximum="100" IsIndeterminate="True" VerticalAlignment="Center" HorizontalAlignment="Center" />
                 <Image x:Name="BackIcon" Grid.Column="0" Source="/Resources/PlexIcon.png" Width="96" Height="96" Stretch="UniformToFill" />
                 <Image x:Name="UserIcon" Grid.Column="0" Width="96" Height="96" Stretch="UniformToFill" />
 
@@ -27,7 +26,6 @@
             </Grid>
 
             <Border Grid.Row="2" Background="{StaticResource BorderBrushMuted}" Height="1" VerticalAlignment="Bottom" />
-
             <StackPanel Grid.Row="3" Margin="15,5,15,15" Spacing="1">
                 <Grid Height="42" ColumnDefinitions="Auto,*">
                     <Image x:Name="DiscordAvatar" Grid.Column="0" Source="/Resources/PlexIcon.png" Height="32" Width="32" HorizontalAlignment="Left" Margin="5,0,8,0" />
@@ -66,8 +64,8 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+            <ProgressBar Grid.Row="2" x:Name="LoadingImage" Width="270" Height="4" Minimum="0" Maximum="100" IsIndeterminate="True" VerticalAlignment="Center" HorizontalAlignment="Center" />
         </Grid>
-
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,5,0" VerticalAlignment="Top">
             <Button Width="34" Height="20" Click="LogsButton_Click" Classes="shape" ToolTip.Tip="Open Log">
                 <TextBlock Text="Log" FontSize="11" />

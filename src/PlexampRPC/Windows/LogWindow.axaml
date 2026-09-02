@@ -21,7 +21,7 @@
         </ListBox>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.Row="1">
-            <Button x:Name="SaveButton" Content="Save to File" Width="100" HorizontalAlignment="Right" Margin="5,1,0,5" />
+            <Button x:Name="SaveButton" Content="Save to File" Width="110" HorizontalAlignment="Right" Margin="5,1,0,5" />
             <Button x:Name="CopyButton" Content="Copy to Clipboard" Width="140" HorizontalAlignment="Right" Margin="5,1,0,5" />
         </StackPanel>
     </Grid>

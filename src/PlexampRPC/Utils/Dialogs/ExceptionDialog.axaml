@@ -7,14 +7,14 @@
         Width="500">
     <Grid RowDefinitions="30,*" Background="{StaticResource AppBackgroundBrush}">
         <TextBlock x:Name="HeaderText" Text="PlexampRPC has crashed" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="19" FontWeight="Bold" />
-        <Grid Background="{StaticResource AppBackgroundBrush}" Margin="5,0,5,5" Grid.Row="1" RowDefinitions="*,32">
+        <Grid Background="{StaticResource AppBackgroundBrush}" Margin="5,0,5,5" Grid.Row="1" RowDefinitions="*,36">
             <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
                 <TextBox x:Name="ExceptionText" Padding="5" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" BorderThickness="0" />
             </ScrollViewer>
             <Border Height="1" Background="{StaticResource BorderBrushMuted}" VerticalAlignment="Bottom" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1">
-                <Button x:Name="CopyButton" Content="Copy to Clipboard" Width="135" HorizontalAlignment="Right" Margin="0,5,5,5" />
-                <Button x:Name="CloseButton" Content="Close" Width="75" HorizontalAlignment="Right" Margin="0,5,5,5" />
+                <Button x:Name="CopyButton" Content="Copy to Clipboard" Width="140" HorizontalAlignment="Right" Margin="0,5,5,5" />
+                <Button x:Name="CloseButton" Content="Close" Width="110" HorizontalAlignment="Right" Margin="0,5,5,5" />
             </StackPanel>
         </Grid>
     </Grid>
