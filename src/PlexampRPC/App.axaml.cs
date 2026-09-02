@@ -1,7 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using System.IO;
-using System.Windows;
+using System.Windows.Input;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using DiscordRPC;
 using DiscordRPC.Logging;
 using Microsoft.Extensions.Logging;
@@ -13,7 +16,6 @@ using Plex.ServerApi.PlexModels.OAuth;
 using DyviniaUtils;
 using DyviniaUtils.Dialogs;
 using PlexampRPC.Data;
-using Hardcodet.Wpf.TaskbarNotification;
 
 namespace PlexampRPC
 {
@@ -50,6 +52,9 @@ namespace PlexampRPC
     /// </summary>
     public partial class App : Application {
 
+        private IClassicDesktopStyleApplicationLifetime? desktopLifetime;
+        private MainWindow? mainWindow;
+
         public static readonly string Version = "v" + Assembly.GetExecutingAssembly().GetName()?.Version?.ToString()[..5];
 
         public static string ClientID => Config.Settings.DiscordListeningTo switch {
@@ -73,6 +78,9 @@ namespace PlexampRPC
 
         public static LogWriter? Log { get; set; }
 
+        public ICommand ShowMainWindowCommand { get; }
+        public ICommand ExitCommand { get; }
+
         public App() {
             Config.Load();
 
@@ -83,41 +91,77 @@ namespace PlexampRPC
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
             AppDomain.CurrentDomain.ProcessExit += (_, _) => DiscordClient.Dispose();
 
-            DispatcherUnhandledException += ExceptionDialog.UnhandledException;
+            ShowMainWindowCommand = new RelayCommand(ShowMainWindow);
+            ExitCommand = new RelayCommand(Shutdown);
+
+            DataContext = this;
+            AppDomain.CurrentDomain.UnhandledException += (_, e) => {
+                if (e.ExceptionObject is Exception ex)
+                    ExceptionDialog.Show(ex, Assembly.GetEntryAssembly()?.GetName().Name ?? "Exception", null, true);
+            };
         }
 
-        protected override async void OnStartup(StartupEventArgs e) {
-            MainWindow window = new();
-
-            if (Config.Settings.StartInTray && Environment.GetCommandLineArgs().Any(a => a == "--startup"))
-                window.TrayIcon.ShowBalloonTip(null, "Started PlexampRPC in Tray", BalloonIcon.None);
-            else
-                window.Show();
-
-            await PlexSignIn();
-            window.UpdateAccountIcon();
-            PlexResources = await window.GetAccountResources();
-
-            window.WindowState = WindowState.Normal;
-            window.Activate();
-            window.GetAccountInfo();
-            window.StartPolling();
-
-            foreach (Process existingProcess in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
-                if (existingProcess.Id != Environment.ProcessId)
-                    existingProcess.Kill();
-
-            if (Config.Settings.UpdateChecker)
-                await GitHub.CheckAndInstall("Dyvinia", "PlexampRPC");
+        public override void Initialize() {
+            AvaloniaXamlLoader.Load(this);
         }
 
-        protected override void OnExit(ExitEventArgs e) {
+        public override async void OnFrameworkInitializationCompleted() {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime) {
+                desktopLifetime = lifetime;
+                desktopLifetime.ShutdownRequested += (_, _) => OnExit();
+                mainWindow = new MainWindow();
+                desktopLifetime.MainWindow = mainWindow;
+
+                if (Config.Settings.StartInTray && Environment.GetCommandLineArgs().Any(a => a == "--startup"))
+                    Console.WriteLine("INFO: Started PlexampRPC in Tray");
+                else
+                    mainWindow.Show();
+
+                await PlexSignIn();
+                mainWindow.UpdateAccountIcon();
+                PlexResources = await mainWindow.GetAccountResources();
+
+                mainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
+                mainWindow.Activate();
+                mainWindow.GetAccountInfo();
+                mainWindow.StartPolling();
+
+                foreach (Process existingProcess in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
+                    if (existingProcess.Id != Environment.ProcessId)
+                        existingProcess.Kill();
+
+                if (Config.Settings.UpdateChecker)
+                    await GitHub.CheckAndInstall("Dyvinia", "PlexampRPC");
+            }
+
+            base.OnFrameworkInitializationCompleted();
+        }
+
+        private void OnExit() {
             DiscordClient.Dispose();
 
             try {
                 File.WriteAllText(Path.Combine(Path.GetDirectoryName(Config.FilePath)!, "log.txt"), Log?.ToString());
             }
             catch { }
+        }
+
+        private void ShowMainWindow() {
+            if (mainWindow is null)
+                return;
+
+            Dispatcher.UIThread.Post(() => {
+                mainWindow.Show();
+                mainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
+                mainWindow.Activate();
+            });
+        }
+
+        public void Shutdown() {
+            Dispatcher.UIThread.Post(() => {
+                mainWindow?.CloseForShutdown();
+                desktopLifetime?.Shutdown();
+            });
         }
 
         private static void DiscordInit() {
@@ -165,6 +209,17 @@ namespace PlexampRPC
                 await Task.Delay(1000);
             }
             return plexPin.AuthToken;
+        }
+    }
+
+    public sealed class RelayCommand(Action execute) : ICommand {
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => execute();
+
+        public event EventHandler? CanExecuteChanged {
+            add { }
+            remove { }
         }
     }
 }

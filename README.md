@@ -56,7 +56,7 @@ These are all the placeholders that can be used for the template (the 3 text box
 
 > **Q:** I can't run this
 > 
-> **A:** This requires [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) and is Windows Only.
+> **A:** This requires [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). The UI uses Avalonia; startup integration is Windows-specific.
 
 ## Donate
 [![Donate-Kofi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J63UBHG)

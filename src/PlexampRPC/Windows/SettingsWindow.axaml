@@ -1,0 +1,60 @@
+<Window x:Class="PlexampRPC.SettingsWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PlexampRPC"
+        SizeToContent="Height"
+        Width="250"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Resources/Icon.ico"
+        CanResize="False">
+    <Grid Background="{StaticResource AppBackgroundBrush}">
+        <StackPanel Margin="20" Spacing="1">
+            <StackPanel>
+                <TextBlock Text="Options" FontSize="14" Height="20" FontWeight="Bold" />
+                <DockPanel ToolTip.Tip="Seconds between each refresh">
+                    <TextBlock Text="Refresh Interval:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,1,0,0" />
+                    <TextBox VerticalContentAlignment="Center" DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding RefreshInterval}" />
+                </DockPanel>
+                <DockPanel ToolTip.Tip="Clears presence if session has not been updated in this many seconds">
+                    <TextBlock Text="Session Timeout:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,1,0,0" />
+                    <TextBox VerticalContentAlignment="Center" DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding SessionTimeout}" />
+                </DockPanel>
+                <DockPanel ToolTip.Tip="Album Art Resolution in Pixels">
+                    <TextBlock Text="Art Resolution:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,1,0,0" />
+                    <TextBox VerticalContentAlignment="Center" DockPanel.Dock="Right" Margin="0,4,0,0" Width="48" HorizontalAlignment="Right" Text="{Binding ArtResolution}" />
+                </DockPanel>
+                <CheckBox x:Name="CheckUpdatesCheckBox" Margin="0,2,0,0" Content="Check for Updates" IsChecked="{Binding UpdateChecker}" ToolTip.Tip="Checks GitHub for Updates" />
+                <CheckBox x:Name="StartupCheckBox" Content="Start on Startup" IsChecked="False" ToolTip.Tip="Start PlexampRPC when Windows starts" />
+                <CheckBox x:Name="TrayCheckBox" Content="Startup in Tray" IsChecked="{Binding StartInTray}" ToolTip.Tip="Starts the application in the tray when starting on startup" />
+                <CheckBox x:Name="CloseTrayCheckBox" Content="Close to Tray" IsChecked="{Binding CloseToTray}" ToolTip.Tip="Pressing the X button minimizes to tray" />
+                <CheckBox x:Name="OwnedCheckBox" Content="Owned Servers Only" IsChecked="{Binding OwnedOnly}" ToolTip.Tip="Only adds servers that belong to the authenticated Plex user" />
+                <CheckBox x:Name="LocalCheckBox" Content="Use Local Address" IsChecked="{Binding LocalAddress}" ToolTip.Tip="Use the Plex server local IP and port" />
+                <CheckBox x:Name="LocalPlayerCheckBox" Content="Use Local Player" IsChecked="{Binding LocalPlayer}" ToolTip.Tip="Poll local Plexamp player instead of querying Plex server" />
+            </StackPanel>
+
+            <Grid Height="10" />
+            <StackPanel>
+                <TextBlock Text="Status Display" FontSize="14" Height="20" FontWeight="Bold" ToolTip.Tip="Text displayed in the member list" />
+                <RadioButton x:Name="RadioStatusDetails" Content="Line 1" GroupName="StatusDisplay" />
+                <RadioButton x:Name="RadioStatusState" Content="Line 2" GroupName="StatusDisplay" />
+                <RadioButton x:Name="RadioStatusName" Content="Name" GroupName="StatusDisplay" />
+            </StackPanel>
+
+            <Grid Height="10" />
+            <StackPanel>
+                <TextBlock Text="Listening To" FontSize="14" Height="20" FontWeight="Bold" ToolTip.Tip="Sets the client id application name" />
+                <RadioButton x:Name="RadioListeningPlexamp" Content="Plexamp" GroupName="ListeningTo" />
+                <RadioButton x:Name="RadioListeningMusic" Content="Music" GroupName="ListeningTo" />
+                <RadioButton x:Name="RadioListeningCustom" Content="Custom" GroupName="ListeningTo" />
+            </StackPanel>
+
+            <Grid Height="10" />
+            <StackPanel>
+                <TextBlock Text="Template" FontSize="14" Height="20" FontWeight="Bold" />
+                <TextBox x:Name="TemplateL1" VerticalContentAlignment="Center" Margin="0,2,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL1}" ToolTip.Tip="{}{title}, {artist}, {album}" LostFocus="Template_LostFocus" />
+                <TextBox x:Name="TemplateL2" VerticalContentAlignment="Center" Margin="0,1,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL2}" ToolTip.Tip="{}{title}, {artist}, {album}" LostFocus="Template_LostFocus" />
+                <TextBox x:Name="TemplateL3" VerticalContentAlignment="Center" Margin="0,1,0,0" HorizontalAlignment="Stretch" Text="{Binding TemplateL3}" ToolTip.Tip="{}{title}, {artist}, {album}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

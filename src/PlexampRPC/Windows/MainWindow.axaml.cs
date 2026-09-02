@@ -1,31 +1,47 @@
-﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Dynamic;
-using System.IO;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
 using System.Xml;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using DiscordRPC;
-using Hardcodet.Wpf.TaskbarNotification;
 using PlexampRPC.Data;
 using PlexampRPC.Utils;
 
 namespace PlexampRPC {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window {
 
         private static readonly HttpClient httpClient = new();
 
         private static readonly JsonSerializerOptions serializerOptions = new() { WriteIndented = true };
 
-        private PlexResourceData? SelectedResource => (PlexResourceData)UserServerComboBox.SelectedItem;
+        private readonly Image userIcon;
+        private readonly TextBlock discordUsername;
+        private readonly Image discordAvatar;
+        private readonly TextBlock statusTextBox;
+        private readonly ComboBox userServerComboBox;
+        private readonly StackPanel userInfoPanel;
+        private readonly ProgressBar loadingImage;
+        private readonly Grid discordStatus;
+        private readonly Image previewArt;
+        private readonly TextBlock previewL1;
+        private readonly TextBlock previewL2;
+        private readonly TextBlock previewL3;
+        private readonly TextBlock previewListeningTo;
+        private readonly TextBlock previewStatusListeningTo;
+        private readonly StackPanel previewTime;
+        private readonly TextBlock previewTimeStart;
+        private readonly TextBlock previewTimeEnd;
+        private readonly ProgressBar previewTimeProgress;
+        private readonly Grid previewPaused;
+
+        private bool forceClose;
+
+        private PlexResourceData? SelectedResource => userServerComboBox.SelectedItem as PlexResourceData;
 
         public Uri? SelectedAddress {
             get {
@@ -39,85 +55,77 @@ namespace PlexampRPC {
         public MainWindow() {
             InitializeComponent();
 
+            userIcon = this.FindControl<Image>("UserIcon")!;
+            discordUsername = this.FindControl<TextBlock>("DiscordUsername")!;
+            discordAvatar = this.FindControl<Image>("DiscordAvatar")!;
+            statusTextBox = this.FindControl<TextBlock>("StatusTextBox")!;
+            userServerComboBox = this.FindControl<ComboBox>("UserServerComboBox")!;
+            userInfoPanel = this.FindControl<StackPanel>("UserInfoPanel")!;
+            loadingImage = this.FindControl<ProgressBar>("LoadingImage")!;
+            discordStatus = this.FindControl<Grid>("DiscordStatus")!;
+            previewArt = this.FindControl<Image>("PreviewArt")!;
+            previewL1 = this.FindControl<TextBlock>("PreviewL1")!;
+            previewL2 = this.FindControl<TextBlock>("PreviewL2")!;
+            previewL3 = this.FindControl<TextBlock>("PreviewL3")!;
+            previewListeningTo = this.FindControl<TextBlock>("PreviewListeningTo")!;
+            previewStatusListeningTo = this.FindControl<TextBlock>("PreviewStatusListeningTo")!;
+            previewTime = this.FindControl<StackPanel>("PreviewTime")!;
+            previewTimeStart = this.FindControl<TextBlock>("PreviewTimeStart")!;
+            previewTimeEnd = this.FindControl<TextBlock>("PreviewTimeEnd")!;
+            previewTimeProgress = this.FindControl<ProgressBar>("PreviewTimeProgress")!;
+            previewPaused = this.FindControl<Grid>("PreviewPaused")!;
+
             httpClient.Timeout = TimeSpan.FromSeconds(2);
-
             DataContext = Config.Settings;
-            MouseDown += (_, _) => FocusManager.SetFocusedElement(this, this);
 
-            StateChanged += (_, _) => {
-                if (WindowState == WindowState.Minimized && !Config.Settings.CloseToTray) {
+            PropertyChanged += (_, e) => {
+                if (e.Property == WindowStateProperty && WindowState == WindowState.Minimized && !Config.Settings.CloseToTray) {
                     Hide();
-                    TrayIcon.ShowBalloonTip(null, "Minimized to Tray", BalloonIcon.None);
+                    Console.WriteLine("INFO: Minimized to Tray");
                 }
             };
 
             ResetPresence();
-            SetupTray();
         }
 
-        public TaskbarIcon TrayIcon = new() {
-            ToolTipText = "PlexampRPC",
-            MenuActivation = PopupActivationMode.LeftOrRightClick
-        };
-
-        private void SetupTray() {
-            TrayIcon.IconSource = Icon;
-            ContextMenu contextMenu = new();
-            MenuItem menuShow = new() { Header = "Show PlexampRPC" };
-            MenuItem menuExit = new() { Header = "Exit PlexampRPC" };
-
-            void show(object s, RoutedEventArgs e) {
-                Show();
-                WindowState = WindowState.Normal;
-            }
-
-            TrayIcon.TrayMouseDoubleClick += show;
-            TrayIcon.TrayLeftMouseUp += show;
-            menuShow.Click += show;
-            menuExit.Click += (_, _) => {
-                Application.Current.Shutdown();
-            };
-
-            contextMenu.Items.Add(menuShow);
-            contextMenu.Items.Add(menuExit);
-            TrayIcon.ContextMenu = contextMenu;
+        private void InitializeComponent() {
+            AvaloniaXamlLoader.Load(this);
         }
 
-        public void UpdateAccountIcon() {
-            Uri uri = new(App.Account?.Thumb ?? "/Resources/PlexIcon.png");
-            if (UserIcon.Source?.ToString() != uri.ToString()) {
-                UserIcon.Source = new BitmapImage(uri) {
-                    CreateOptions = BitmapCreateOptions.IgnoreImageCache
-                };
-            }
+        public async void UpdateAccountIcon() {
+            string iconSource = App.Account?.Thumb ?? "avares://PlexampRPC/Resources/PlexIcon.png";
+            userIcon.Source = await LoadBitmap(iconSource);
 
-            DiscordUsername.Text = App.DiscordClient.CurrentUser?.DisplayName ?? "Discord";
-            DiscordAvatar.Source = new BitmapImage(new(App.DiscordClient.CurrentUser?.GetAvatarURL() ?? "https://cdn.discordapp.com/embed/avatars/0.png")) {
-                CreateOptions = BitmapCreateOptions.IgnoreImageCache
-            };
+            discordUsername.Text = App.DiscordClient.CurrentUser?.Username ?? "Discord";
+            discordAvatar.Source = await LoadBitmap(App.DiscordClient.CurrentUser?.GetAvatarURL(User.AvatarFormat.PNG, User.AvatarSize.x128) ?? "https://cdn.discordapp.com/embed/avatars/0.png");
         }
 
         public void GetAccountInfo() {
             UpdateAccountIcon();
-            StatusTextBox.Text = App.Account?.Title ?? App.Account?.Username ?? "Name";
+            statusTextBox.Text = App.Account?.Title ?? App.Account?.Username ?? "Name";
 
             if (string.IsNullOrEmpty(Config.Settings.PlexAddress)) {
                 if (App.PlexResources != null)
-                    UserServerComboBox.ItemsSource = App.PlexResources;
+                    userServerComboBox.ItemsSource = App.PlexResources;
             }
             else {
-                dynamic customItem = new ExpandoObject();
-                customItem.Name = Config.Settings.PlexAddress;
-                UserServerComboBox.ItemsSource = new List<dynamic>() { customItem };
-                UserServerComboBox.IsEnabled = false;
+                userServerComboBox.ItemsSource = new List<PlexResourceData>() {
+                    new() {
+                        Name = Config.Settings.PlexAddress,
+                        AccessToken = App.Token,
+                        Uri = new UriBuilder(Config.Settings.PlexAddress).Uri,
+                        LocalUri = new UriBuilder(Config.Settings.PlexAddress).Uri
+                    }
+                };
+                userServerComboBox.IsEnabled = false;
             }
-            UserServerComboBox.SelectedIndex = App.PlexResources?.ToList().FindIndex(r => r.Name == Config.Settings.SelectedServer) ?? 0;
-            if (UserServerComboBox.SelectedIndex == -1)
-                UserServerComboBox.SelectedIndex = 0;
+            userServerComboBox.SelectedIndex = App.PlexResources?.ToList().FindIndex(r => r.Name == Config.Settings.SelectedServer) ?? 0;
+            if (userServerComboBox.SelectedIndex == -1)
+                userServerComboBox.SelectedIndex = 0;
 
-            UserInfoPanel.Visibility = Visibility.Visible;
-            UserServerComboBox.Visibility = Visibility.Visible;
-            LoadingImage.Visibility = Visibility.Collapsed;
+            userInfoPanel.IsVisible = true;
+            userServerComboBox.IsVisible = true;
+            loadingImage.IsVisible = false;
         }
 
         public async void StartPolling() {
@@ -128,7 +136,7 @@ namespace PlexampRPC {
                 SessionData? currentSession = Config.Settings.LocalPlayer ? await GetLocalSession() : await GetServerSession();
                 if (currentSession != null) {
                     if (JsonSerializer.Serialize(currentSession) != JsonSerializer.Serialize(lastSession)) {
-                        SetPresence(await BuildPresence(currentSession));
+                        await SetPresence(await BuildPresence(currentSession));
                         if (currentSession?.Key != lastSession?.Key)
                             Console.WriteLine("Title: {title}\nArtist: {artist}\nAlbum: {album}\nYear: {year}\nPlayer: {player}\nListen Count: {listens}\nCodec: {codec}\nContainer: {container}\nBitrate (Kbps): {bitrate}\nChannel Layout: {channel}\nBit Depth: {bitdepth}\nSamplerate (kHz): {samplerate}".ApplyPlaceholders(currentSession));
 
@@ -158,7 +166,6 @@ namespace PlexampRPC {
                 XmlDocument responseXml = new();
                 responseXml.LoadXml(await sendResponse.Content.ReadAsStringAsync());
 
-                // Find the active music timeline with a Track element
                 XmlNode? timelineNode = responseXml.SelectSingleNode("/MediaContainer/Timeline[Track]");
                 if (timelineNode is null)
                     return null;
@@ -193,7 +200,7 @@ namespace PlexampRPC {
 
         private async Task<SessionData?> GetServerSession() {
             try {
-                if (UserServerComboBox.SelectedItem is null)
+                if (userServerComboBox.SelectedItem is null)
                     return null;
                 if (!Uri.IsWellFormedUriString(SelectedAddress?.ToString(), UriKind.Absolute)) {
                     Console.WriteLine("WARN: No server selected or address is invalid");
@@ -237,7 +244,7 @@ namespace PlexampRPC {
             };
         }
 
-        private void SetPresence(PresenceData presence) {
+        private async Task SetPresence(PresenceData presence) {
             if (presence.State == "playing") {
                 App.DiscordClient.SetPresence(new() {
                     Details = presence.Line1,
@@ -251,36 +258,14 @@ namespace PlexampRPC {
                     }
                 });
 
-                PreviewArt.Source = new BitmapImage(new Uri(presence.ArtLink));
-                PreviewL1.Text = presence.Line1;
-                PreviewL2.Text = presence.Line2;
-                PreviewL3.Text = presence.Line3;
-
-                PreviewListeningTo.Text = $"Listening to {Config.Settings.DiscordListeningTo}";
-                PreviewStatusListeningTo.Text = Config.Settings.StatusDisplayType switch {
-                    "State" => PreviewL2.Text,
-                    "Details" => PreviewL1.Text,
-                    _ => Config.Settings.DiscordListeningTo,
-                };
-                DiscordStatus.Visibility = Visibility.Visible;
-
-                PreviewTime.Visibility = Visibility.Visible;
-
-                TimeSpan timeStart = TimeSpan.FromMilliseconds(presence.TimeOffset);
-                PreviewTimeStart.Text = $"{string.Format("{0:D2}:{1:D2}", timeStart.Minutes, timeStart.Seconds)}";
-
-                TimeSpan timeEnd = TimeSpan.FromMilliseconds(presence.Duration);
-                PreviewTimeEnd.Text = $"{string.Format("{0:D2}:{1:D2}", timeEnd.Minutes, timeEnd.Seconds)}";
-
-                PreviewTimeProgress.Value = 100d * presence.TimeOffset / presence.Duration;
-
-                PreviewPaused.Visibility = Visibility.Collapsed;
+                previewTime.IsVisible = true;
+                previewPaused.IsVisible = false;
             }
             else {
                 App.DiscordClient.SetPresence(new RichPresence() {
                     Details = presence.Line1,
                     State = presence.Line2,
-                    Timestamps = new(DateTime.UtcNow, DateTime.UtcNow), // this is the least broken option to avoid any timer from showing I think
+                    Timestamps = new(DateTime.UtcNow, DateTime.UtcNow),
                     Type = ActivityType.Listening,
                     StatusDisplay = Enum.Parse<StatusDisplayType>(Config.Settings.StatusDisplayType),
                     Assets = new() {
@@ -291,39 +276,45 @@ namespace PlexampRPC {
                     }
                 });
 
-                PreviewArt.Source = new BitmapImage(new Uri(presence.ArtLink));
-                PreviewL1.Text = presence.Line1;
-                PreviewL2.Text = presence.Line2;
-                PreviewL3.Text = presence.Line3;
-
-                PreviewListeningTo.Text = $"Listening to {Config.Settings.DiscordListeningTo}";
-                PreviewStatusListeningTo.Text = Config.Settings.StatusDisplayType switch {
-                    "State" => PreviewL2.Text,
-                    "Details" => PreviewL1.Text,
-                    _ => Config.Settings.DiscordListeningTo,
-                };
-                DiscordStatus.Visibility = Visibility.Visible;
-
-                PreviewTime.Visibility = Visibility.Collapsed;
-                PreviewPaused.Visibility = Visibility.Visible;
+                previewTime.IsVisible = false;
+                previewPaused.IsVisible = true;
             }
+
+            previewArt.Source = await LoadBitmap(presence.ArtLink);
+            previewL1.Text = presence.Line1;
+            previewL2.Text = presence.Line2;
+            previewL3.Text = presence.Line3;
+
+            previewListeningTo.Text = $"Listening to {Config.Settings.DiscordListeningTo}";
+            previewStatusListeningTo.Text = Config.Settings.StatusDisplayType switch {
+                "State" => previewL2.Text,
+                "Details" => previewL1.Text,
+                _ => Config.Settings.DiscordListeningTo,
+            };
+            discordStatus.IsVisible = true;
+
+            TimeSpan timeStart = TimeSpan.FromMilliseconds(presence.TimeOffset);
+            previewTimeStart.Text = $"{string.Format("{0:D2}:{1:D2}", timeStart.Minutes, timeStart.Seconds)}";
+
+            TimeSpan timeEnd = TimeSpan.FromMilliseconds(presence.Duration);
+            previewTimeEnd.Text = $"{string.Format("{0:D2}:{1:D2}", timeEnd.Minutes, timeEnd.Seconds)}";
+
+            previewTimeProgress.Value = presence.Duration > 0 ? 100d * presence.TimeOffset / presence.Duration : 0;
         }
 
         private void ResetPresence() {
-            PreviewArt.Source = new BitmapImage(new Uri("https://raw.githubusercontent.com/Dyvinia/PlexampRPC/master/Resources/PlexIcon.png")) {
-                CreateOptions = BitmapCreateOptions.IgnoreImageCache
-            };
+            previewArt.Source = LoadAssetBitmap("Resources/PlexIcon.png");
 
-            PreviewL1.Text = Config.Settings.TemplateL1.ApplyPlaceholders();
-            PreviewL2.Text = Config.Settings.TemplateL2.ApplyPlaceholders();
-            PreviewL3.Text = Config.Settings.TemplateL3.ApplyPlaceholders();
+            previewL1.Text = Config.Settings.TemplateL1.ApplyPlaceholders();
+            previewL2.Text = Config.Settings.TemplateL2.ApplyPlaceholders();
+            previewL3.Text = Config.Settings.TemplateL3.ApplyPlaceholders();
 
-            PreviewListeningTo.Text = $"Listening to {Config.Settings.DiscordListeningTo}";
-            PreviewStatusListeningTo.Text = Config.Settings.DiscordListeningTo;
-            DiscordStatus.Visibility = Visibility.Collapsed;
+            previewListeningTo.Text = $"Listening to {Config.Settings.DiscordListeningTo}";
+            previewStatusListeningTo.Text = Config.Settings.DiscordListeningTo;
+            discordStatus.IsVisible = false;
 
-            PreviewTime.Visibility = Visibility.Collapsed;
-            PreviewPaused.Visibility = Visibility.Collapsed;
+            previewTime.IsVisible = false;
+            previewPaused.IsVisible = false;
 
             App.DiscordClient.ClearPresence();
         }
@@ -387,16 +378,15 @@ namespace PlexampRPC {
                     if (Config.Settings.OwnedOnly && !resource.Owned)
                         continue;
                     if (serverResources.Length > 1)
-                        StatusTextBox.Text = $"Loading Servers...\n[{i}/{serverResources.Length}]";
+                        statusTextBox.Text = $"Loading Servers...\n[{i}/{serverResources.Length}]";
                     else
-                        StatusTextBox.Text = "Loading Servers...";
+                        statusTextBox.Text = "Loading Servers...";
                     await TestResource(resource);
                     if (resource is not null)
                         finalResources.Add(resource);
                 }
-                // Show it being complete before replacing the text with username/etc
                 if (serverResources.Length > 1)
-                    StatusTextBox.Text = $"Loading Servers...\n[{serverResources.Length}/{serverResources.Length}]";
+                    statusTextBox.Text = $"Loading Servers...\n[{serverResources.Length}/{serverResources.Length}]";
                 await Task.Delay(200);
 
                 return [.. finalResources];
@@ -436,7 +426,7 @@ namespace PlexampRPC {
                 catch (TaskCanceledException) {
                     Console.WriteLine($"WARN: Timeout {(connection.Local ? "Local" : "Remote")} {uri}status/sessions?X-Plex-Token={resource.AccessToken?[..3]}...");
                 }
-                catch (HttpRequestException e) { // Unreachable server, skip for now
+                catch (HttpRequestException e) {
                     Console.WriteLine($"WARN: Unable to access {uri}status/sessions?X-Plex-Token={resource.AccessToken?[..3]}: {e.Message}");
                 }
                 catch (Exception e) {
@@ -460,20 +450,20 @@ namespace PlexampRPC {
 
         private void Template_LostFocus(object sender, RoutedEventArgs e) => Config.Save();
 
-        private void SettingsButton_Click(object sender, RoutedEventArgs e) {
-            SettingsWindow settingsWindow = new() { Owner = this };
-            settingsWindow.ShowDialog();
+        private async void SettingsButton_Click(object sender, RoutedEventArgs e) {
+            SettingsWindow settingsWindow = new() { WindowStartupLocation = WindowStartupLocation.CenterOwner };
+            await settingsWindow.ShowDialog(this);
             Config.Save();
         }
 
         private void LogsButton_Click(object sender, RoutedEventArgs e) => new LogWindow(App.Log!).Show();
 
-        protected override void OnClosing(CancelEventArgs e) {
+        protected override void OnClosing(WindowClosingEventArgs e) {
             base.OnClosing(e);
-            if (Config.Settings.CloseToTray) {
+            if (!forceClose && Config.Settings.CloseToTray) {
                 Hide();
-                TrayIcon.ShowBalloonTip(null, "Minimized to Tray", BalloonIcon.None);
-                e.Cancel = true;;
+                Console.WriteLine("INFO: Minimized to Tray");
+                e.Cancel = true;
             }
         }
 
@@ -486,17 +476,57 @@ namespace PlexampRPC {
             Config.Save();
         }
 
-        protected override void OnKeyDown(KeyEventArgs e) {
+        protected override async void OnKeyDown(KeyEventArgs e) {
             base.OnKeyDown(e);
 
             if (e.Key == Key.F12)
-                Process.Start("explorer.exe", $"/select, {Config.FilePath}");
+                OpenConfigFolder();
 
             if (e.Key == Key.F5)
                 new LogWindow(App.Log!).Show();
 
-            if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
-                App.Log?.SaveAs();
+            if (e.Key == Key.S && e.KeyModifiers == KeyModifiers.Control && App.Log is not null)
+                await App.Log.SaveAs(this);
+        }
+
+        public void CloseForShutdown() {
+            forceClose = true;
+            Close();
+        }
+
+        private static void OpenConfigFolder() {
+            string folder = Path.GetDirectoryName(Config.FilePath)!;
+            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+        }
+
+        private static async Task<Bitmap?> LoadBitmap(string source) {
+            try {
+                if (Uri.TryCreate(source, UriKind.Absolute, out Uri? uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)) {
+                    await using Stream remoteStream = await httpClient.GetStreamAsync(uri);
+                    MemoryStream memoryStream = new();
+                    await remoteStream.CopyToAsync(memoryStream);
+                    memoryStream.Position = 0;
+                    return new Bitmap(memoryStream);
+                }
+
+                if (Uri.TryCreate(source, UriKind.Absolute, out uri) && uri.Scheme == "avares")
+                    return new Bitmap(AssetLoader.Open(uri));
+
+                if (source.StartsWith('/'))
+                    return LoadAssetBitmap(source.TrimStart('/'));
+
+                if (File.Exists(source))
+                    return new Bitmap(source);
+            }
+            catch (Exception e) {
+                Console.WriteLine($"WARN: Unable to load image: {source}\n{e.Message}");
+            }
+
+            return LoadAssetBitmap("Resources/PlexIcon.png");
+        }
+
+        private static Bitmap LoadAssetBitmap(string path) {
+            return new Bitmap(AssetLoader.Open(new Uri($"avares://PlexampRPC/{path}")));
         }
     }
 }

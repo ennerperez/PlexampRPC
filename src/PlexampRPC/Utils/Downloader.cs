@@ -1,18 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
 
 namespace DyviniaUtils {
 
     class Downloader {
-        /// <summary>
-        /// Download file to destination
-        /// </summary>
         public static async Task Download(string downloadUrl, string destinationFilePath, IProgress<double> progress) {
             using HttpClient httpClient = new() { Timeout = TimeSpan.FromMinutes(30) };
             using HttpResponseMessage response = await httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
@@ -20,19 +12,19 @@ namespace DyviniaUtils {
             response.EnsureSuccessStatusCode();
             long totalBytes = response.Content.Headers.ContentLength ?? 0L;
 
-            using Stream contentStream = await response.Content.ReadAsStreamAsync();
+            await using Stream contentStream = await response.Content.ReadAsStreamAsync();
             long totalBytesRead = 0L;
             long readCount = 0L;
             byte[] buffer = new byte[4096];
             bool isMoreToRead = true;
 
-            using FileStream fileStream = new(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+            await using FileStream fileStream = new(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
 
             do {
                 int bytesRead = await contentStream.ReadAsync(buffer);
                 if (bytesRead == 0) {
                     isMoreToRead = false;
-                    progress.Report((double)((double)totalBytesRead / totalBytes));
+                    progress.Report(totalBytes > 0 ? (double)totalBytesRead / totalBytes : 1);
                     continue;
                 }
 
@@ -42,15 +34,12 @@ namespace DyviniaUtils {
                 readCount++;
 
                 if (readCount % 100 == 0) {
-                    progress.Report((double)((double)totalBytesRead / totalBytes));
+                    progress.Report(totalBytes > 0 ? (double)totalBytesRead / totalBytes : 0);
                 }
             }
             while (isMoreToRead);
         }
 
-        /// <summary>
-        /// Show progress window while downloading file to destination
-        /// </summary>
         public static async Task DownloadWithWindow(string downloadUrl, string destinationFilePath) {
             DownloadWindow downloadWindow = new();
             downloadWindow.Show();
@@ -60,28 +49,25 @@ namespace DyviniaUtils {
         }
 
         private class DownloadWindow : Window {
-            public IProgress<double> Progress;
+            public IProgress<double> Progress { get; }
 
             public DownloadWindow() {
                 WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                ResizeMode = ResizeMode.NoResize;
-                WindowStyle = WindowStyle.None;
-                AllowsTransparency = true;
-                Background = Brushes.Transparent;
-                Cursor = Cursors.Wait;
-
+                CanResize = false;
+                WindowDecorations = WindowDecorations.None;
                 Title = "Downloading";
                 Height = 100;
                 Width = 400;
+                Background = Brushes.Transparent;
 
                 Grid innerGrid = new() {
-                    Background = new BrushConverter().ConvertFromString("#FF141414") as Brush,
-                    Margin = new Thickness(5)
+                    Background = SolidColorBrush.Parse("#FF141414"),
+                    Margin = new Avalonia.Thickness(5)
                 };
 
                 TextBlock labelText = new() {
                     Text = Title,
-                    FontWeight = FontWeights.Bold,
+                    FontWeight = FontWeight.Bold,
                     FontSize = 20,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
@@ -91,7 +77,6 @@ namespace DyviniaUtils {
                     Height = 5,
                     Maximum = 1,
                     VerticalAlignment = VerticalAlignment.Bottom,
-                    BorderThickness = new Thickness(),
                     Background = Brushes.Transparent,
                     Foreground = Brushes.White,
                 };
@@ -101,7 +86,7 @@ namespace DyviniaUtils {
                 innerGrid.Children.Add(progressBar);
 
                 Grid rootGrid = new() {
-                    Background = new BrushConverter().ConvertFromString("#FF2D2D2D") as Brush
+                    Background = SolidColorBrush.Parse("#FF2D2D2D")
                 };
                 rootGrid.Children.Add(innerGrid);
 
