@@ -1,0 +1,28 @@
+<Window x:Class="PlexampRPC.LogWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Log"
+        Height="500"
+        Width="750"
+        CanResize="True">
+    <Grid RowDefinitions="*,32" Background="{StaticResource AppBackgroundBrush}">
+        <ListBox x:Name="LogBox"
+                 Background="{StaticResource AppBackgroundBrush}"
+                 Margin="4">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid VerticalAlignment="Center" ColumnDefinitions="Auto,Auto,*">
+                        <TextBlock Grid.Column="0" Text="{Binding Timestamp, StringFormat='{}{0: [HH:mm:ss]}'}" TextWrapping="Wrap" FontFamily="Consolas" Margin="0,0,5,0" />
+                        <TextBlock Grid.Column="1" Text="{Binding Prefix}" Foreground="{Binding PrefixColor}" FontWeight="Black" FontFamily="Consolas" Margin="0,0,5,0" />
+                        <TextBox Grid.Column="2" Text="{Binding Message}" TextWrapping="Wrap" FontFamily="Consolas" IsReadOnly="True" BorderThickness="0" Margin="0,0,0,1" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.Row="1">
+            <Button x:Name="SaveButton" Content="Save to File" Width="100" HorizontalAlignment="Right" Margin="5,1,0,5" />
+            <Button x:Name="CopyButton" Content="Copy to Clipboard" Width="140" HorizontalAlignment="Right" Margin="5,1,0,5" />
+        </StackPanel>
+    </Grid>
+</Window>

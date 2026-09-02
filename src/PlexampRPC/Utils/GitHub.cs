@@ -1,13 +1,8 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Windows;
+using Avalonia;
 using DyviniaUtils.Dialogs;
 
 namespace DyviniaUtils {
@@ -36,7 +31,7 @@ namespace DyviniaUtils {
         public static async Task CheckAndInstall(string repoAuthor, string repoName) {
             CleanupUpdate();
             if (await CheckVersion(repoAuthor, repoName)) {
-                if (UpdateDialog.Show(repoAuthor, repoName))
+                if (await UpdateDialog.ShowAsync(repoAuthor, repoName))
                     await InstallUpdate(repoAuthor, repoName);
             }
         }
@@ -84,10 +79,11 @@ namespace DyviniaUtils {
                 await Downloader.DownloadWithWindow(downloadUrl, filePath);
 
                 Process.Start(new ProcessStartInfo { FileName = filePath, UseShellExecute = true });
-                Application.Current.Dispatcher.Invoke(() => Application.Current.Shutdown());
+                if (Application.Current is PlexampRPC.App app)
+                    app.Shutdown();
             }
             catch (Exception e) {
-                MessageBoxDialog.Show($"Failed to install update, please update manually.\n{e.Message}", repoName, MessageBoxButton.OK, DialogSound.Error);
+                await MessageBoxDialog.ShowAsync($"Failed to install update, please update manually.\n{e.Message}", repoName, MessageBoxButton.OK, DialogSound.Error);
                 Process.Start(new ProcessStartInfo($"https://github.com/{repoAuthor}/{repoName}/releases/latest") { UseShellExecute = true });
             }
         }

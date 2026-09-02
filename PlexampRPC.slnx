@@ -1,3 +1,13 @@
 <Solution>
-  <Project Path="PlexampRPC.csproj" />
+  <Folder Name="/.files/">
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs\STACK.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/PlexampRPC/PlexampRPC.csproj" />
+  </Folder>
 </Solution>
