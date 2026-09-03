@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "gitversion.tool": {
+      "version": "6.8.2",
+      "commands": [
+        "dotnet-gitversion"
+      ],
+      "rollForward": false
+    },
+    "husky": {
+      "version": "0.9.1",
+      "commands": [
+        "husky"
+      ],
+      "rollForward": false
+    },
+    "commitlint.net": {
+      "version": "0.8.0",
+      "commands": [
+        "commit-lint"
+      ],
+      "rollForward": false
+    },
+    "dotnet-monitor": {
+      "version": "10.0.3",
+      "commands": [
+        "dotnet-monitor"
+      ],
+      "rollForward": false
+    },
+    "dotnet-outdated-tool": {
+      "version": "4.8.1",
+      "commands": [
+        "dotnet-outdated"
+      ],
+      "rollForward": false
+    },
+    "dotnet-coverage": {
+      "version": "18.11.0",
+      "commands": [
+        "dotnet-coverage"
+      ],
+      "rollForward": false
+    }
+  }
+}
